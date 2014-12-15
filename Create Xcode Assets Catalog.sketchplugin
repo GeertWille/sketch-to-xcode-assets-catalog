@@ -1,11 +1,10 @@
 // (cmd &)
 //
 // Developer: Geert Wille
-// Merged assets generation for Android, windows phone and iOS devices
+
 #import 'library/main.js'
 
-var lines = [],
-    factors = [
+var factors = [
     {
         folder: '',
         scale: 1.0,
