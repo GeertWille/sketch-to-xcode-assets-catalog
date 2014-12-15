@@ -44,25 +44,6 @@ com.geertwille.main = {
         com.geertwille.general.openInFinder(this.baseDir + this.defaultAssetFolder);
     },
 
-    createSelect: function(msg, items, selectedItemIndex){
-        selectedItemIndex = selectedItemIndex || 0
-
-        var accessory = [[NSComboBox alloc] initWithFrame:NSMakeRect(0, 0, 200, 25)]
-        [accessory addItemsWithObjectValues:items]
-        [accessory selectItemAtIndex:selectedItemIndex]
-
-        var alert = [[NSAlert alloc] init]
-        [alert setMessageText:msg]
-        [alert addButtonWithTitle:'OK']
-        [alert addButtonWithTitle:'Cancel']
-        [alert setAccessoryView:accessory]
-
-        var responseCode = [alert runModal]
-        var sel = [accessory indexOfSelectedItem]
-
-        return [responseCode, sel]
-    },
-
     // Return current working directory
     // This works better for the designer's workflow, as they mostly want to
     // save assets in the current directory
@@ -155,10 +136,11 @@ com.geertwille.main = {
     },
 
     copyLayerWithFactor: function(originalSlice, factor) {
-        var copy = [originalSlice duplicate];
-        var frame = [copy frame];
-        var rect = [copy absoluteDirtyRect]
-        slice = [MSExportRequest requestWithRect:rect scale:factor];
+        var copy     = [originalSlice duplicate],
+            frame    = [copy frame],
+            rect     = [copy absoluteDirtyRect],
+            slice    = [MSExportRequest requestWithRect:rect scale:factor];
+
         [copy removeFromParent];
 
         return slice;
