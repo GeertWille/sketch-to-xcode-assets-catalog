@@ -7,41 +7,66 @@ com.geertwille.main = {
     type: '',
     baseDir: '',
     factors: {},
+    layerVisibility: [],
 
     export: function(type, factors) {
         this.type = type;
         this.factors = factors;
-        this.baseDir = this.getCwd();
+        this.baseDir = this.getDirFromPrompt();
 
-        var fileUrl = [doc fileURL],
-            success  = false;
-
-        if (fileUrl == null) {
-            com.geertwille.general.alert("You need to save your document for me to know where to save it");
-            return;
-        }
-
-        if (this.getDirFromPrompt() == null) {
+        if (this.baseDir == null) {
             com.geertwille.general.alert("Not saving any assets");
             return;
         }
 
-        //process the selected slices
-        var slicesToOutput = selection;
+        // If nothing is selected tell the user so
+        if ([selection count] == 0) {
+            com.geertwille.general.alert("No layer(s) selected");
+            return;
+        }
 
-        // Loop over all slices to export
-        var count = [slicesToOutput count];
-        for (var i = 0; i < count; i++) {
-            var slice = [slicesToOutput objectAtIndex: i];
-            success = this.processSlice(slice);
+        // Hide all layers except the ones we are slicing
+        for (var i = 0; i < [selection count]; i++) {
+            var layer = [selection objectAtIndex:i];
+            // Make sure we don't get errors if no artboard exists.
+            // currentPage inerits from MSLayerGroup so it's basicly the same as an artboard
+            var artboard = [layer parentArtboard] ? [layer parentArtboard] : [doc currentPage];
+            this.layerVisibility = [];
 
-            if (success === false) {
-                return;
+            [artboard deselectAllLayers];
+
+            var layerArray = [layer];
+            [artboard selectLayers:layerArray];
+
+            var root = artboard;
+
+            this.hideLayers(root, layer);
+
+            // Process the slice
+            success = this.processSlice(layer);
+
+            // Restore layers visibility
+            for (var m = 0; m < this.layerVisibility.length; m++) {
+                var dict = this.layerVisibility[m];
+                var layer = [dict objectForKey:"layer"];
+                var visibility = [dict objectForKey:"visible"];
+
+                if (visibility == 0) {
+                    [layer setIsVisible:false];
+                } else {
+                    [layer setIsVisible:true];
+                }
             }
+
+            // Restore selection
+            [artboard selectLayers:selection];
+
+            if (success === false)
+                return;
         }
 
         // Open finder window with assets exported
-        com.geertwille.general.openInFinder(this.baseDir + this.defaultAssetFolder);
+        com.geertwille.general.openInFinder(this.baseDir + "/" + this.defaultAssetFolder);
     },
 
     // Return current working directory
@@ -112,20 +137,20 @@ com.geertwille.main = {
                 scale     = this.factors[i].scale,
                 suffix    = this.factors[i].suffix,
                 version   = this.copyLayerWithFactor(slice, scale),
-                fileName  = this.baseDir + this.defaultAssetFolder + "/"+ cutSliceName + ".imageset/" + cutSliceName + suffix + imageExtension,
+                fileName  = this.baseDir + "/" + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/" + cutSliceName + suffix + imageExtension,
                 finalName = cutSliceName + suffix + imageExtension;
 
-            [doc saveArtboardOrSlice: version toFile:fileName];
+            [doc saveArtboardOrSlice:version toFile:fileName];
 
             lineBuffer.push([fileName, scale, idiom]);
         }
 
         // Save json
         jsonContent = this.prepareJSON(lineBuffer),
-        jsonPath    = this.baseDir + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/Contents.json";
+        jsonPath    = this.baseDir + "/" + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/Contents.json";
 
         // write the json string to a file
-        var ok = this.writeTextToFile(this.prepareJSON(lineBuffer), this.baseDir + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/Contents.json");
+        var ok = this.writeTextToFile(this.prepareJSON(lineBuffer), this.baseDir + "/" + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/Contents.json");
 
         if (ok === false) {
             com.geertwille.general.alert(com.geertwille.messages.unknown_error);
@@ -138,12 +163,33 @@ com.geertwille.main = {
     copyLayerWithFactor: function(originalSlice, factor) {
         var copy     = [originalSlice duplicate],
             frame    = [copy frame],
-            rect     = [copy absoluteDirtyRect],
+            rect     = [[copy absoluteRect] rect];
             slice    = [MSExportRequest requestWithRect:rect scale:factor];
 
         [copy removeFromParent];
 
         return slice;
+    },
+
+    // I used this code from https://github.com/nickstamas/Sketch-Better-Android-Export
+    // and has been written by Nick Stamas
+    // Cheers to him :)
+    // Addapted it a bit for my plugin
+    hideLayers: function(root, target) {
+        // Hide all layers except for selected and store visibility
+        for (var k = 0; k < [[root layers] count]; k++) {
+            var currentLayer = [[root layers] objectAtIndex:k];
+            if ([currentLayer containsSelectedItem] && currentLayer != target) {
+                this.hideLayers(currentLayer, target);
+            } else if (!(currentLayer == target)) {
+                var dict = [[NSMutableDictionary alloc] init];
+                [dict addObject:currentLayer forKey:"layer"];
+                [dict addObject:[currentLayer isVisible] forKey:"visible"];
+
+                this.layerVisibility.push(dict);
+                [currentLayer setIsVisible: false];
+            }
+        }
     },
 
     writeTextToFile: function(text, path) {
