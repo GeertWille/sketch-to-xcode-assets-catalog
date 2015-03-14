@@ -132,22 +132,17 @@ com.geertwille.main = {
 
         // Loop over all the factors and save the lines to a lineBuffer array
         for (var i = 0; i < this.factors.length; i++) {
-            var name      = this.factors[i].folder,
-                line      = '',
-                scale     = this.factors[i].scale,
-                suffix    = this.factors[i].suffix,
-                version   = this.copyLayerWithFactor(slice, scale),
-                fileName  = this.baseDir + "/" + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/" + cutSliceName + suffix + imageExtension,
-                finalName = cutSliceName + suffix + imageExtension;
+            var name         = this.factors[i].folder,
+            scale            = this.factors[i].scale,
+            suffix           = this.factors[i].suffix,
+            version          = this.copyLayerWithFactor(slice, scale),
+            relativeFileName = cutSliceName + suffix + imageExtension,
+            absoluteFileName = this.baseDir + "/" + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/" + cutSliceName + suffix + imageExtension;
 
-            [doc saveArtboardOrSlice:version toFile:fileName];
+            [doc saveArtboardOrSlice:version toFile:absoluteFileName];
 
-            lineBuffer.push([fileName, scale, idiom]);
+            lineBuffer.push([relativeFileName, scale, idiom]);
         }
-
-        // Save json
-        jsonContent = this.prepareJSON(lineBuffer),
-        jsonPath    = this.baseDir + "/" + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/Contents.json";
 
         // write the json string to a file
         var ok = this.writeTextToFile(this.prepareJSON(lineBuffer), this.baseDir + "/" + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/Contents.json");
