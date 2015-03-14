@@ -99,9 +99,9 @@ com.geertwille.main = {
     processSlice: function(slice) {
         var frame        = [slice frame],
             sliceName    = [slice name],
-            fileType     = sliceName.substring(0, 2),
-            deviceType   = sliceName.substring(2, 4),
-            cutSliceName = sliceName.substring(4),
+            fileType     = sliceName.trim().substring(0, 2),
+            deviceType   = sliceName.trim().substring(2, 4),
+            cutSliceName = sliceName.trim().substring(4),
             jsonContent  = '',
             jsonPath     = '',
             lineBuffer   = [];
