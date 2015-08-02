@@ -102,9 +102,11 @@ com.geertwille.main = {
             fileType     = sliceName.trim().substring(0, 2),
             deviceType   = sliceName.trim().substring(2, 4),
             cutSliceName = sliceName.trim().substring(4),
+            fileName     = cutSliceName.split('/').pop(),
             jsonContent  = '',
             jsonPath     = '',
             lineBuffer   = [];
+
 
         // Find out our extension to save image with
         if (fileType == "j_") {
@@ -118,7 +120,7 @@ com.geertwille.main = {
             return false;
         }
 
-        // What;s our idion?
+        // What's our idiom?
         if (deviceType == "u_") {
             idiom = "universal";
         } else if (deviceType == "m_") {
@@ -136,8 +138,8 @@ com.geertwille.main = {
             scale            = this.factors[i].scale,
             suffix           = this.factors[i].suffix,
             version          = this.copyLayerWithFactor(slice, scale),
-            relativeFileName = cutSliceName + suffix + imageExtension,
-            absoluteFileName = this.baseDir + "/" + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/" + cutSliceName + suffix + imageExtension;
+            relativeFileName = fileName + suffix + imageExtension,
+            absoluteFileName = this.baseDir + "/" + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/" + fileName + suffix + imageExtension;
 
             [doc saveArtboardOrSlice:version toFile:absoluteFileName];
 
