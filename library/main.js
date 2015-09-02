@@ -5,6 +5,7 @@
 com.geertwille.main = {
     defaultAssetFolder: 'Images.xcassets',
     type: '',
+    densityScale: 0,
     baseDir: '',
     factors: {},
     layerVisibility: [],
@@ -12,6 +13,10 @@ com.geertwille.main = {
     export: function(type, factors) {
         this.type = type;
         this.factors = factors;
+	if(this.densityScale == 0) {
+	    this.densityScale = this.getDensityScaleFromPrompt();
+	}
+	
         this.baseDir = this.getDirFromPrompt();
 
         if (this.baseDir == null) {
@@ -96,6 +101,24 @@ com.geertwille.main = {
         }
     },
 
+    //Let the user select design density
+    getDensityScaleFromPrompt: function() {
+	var accessory = [[NSComboBox alloc] initWithFrame:NSMakeRect(0,0,200,25)]
+	[accessory addItemsWithObjectValues:['@1x', '@2x', '@3x']]
+	[accessory selectItemAtIndex:0]
+
+	var alert = [[NSAlert alloc] init]
+	[alert setMessageText:'Select screen density']
+	[alert addButtonWithTitle:'OK']
+	[alert setAccessoryView:accessory]
+
+	var responseCode = [alert runModal]
+
+	var sel = [accessory indexOfSelectedItem];
+	return sel + 1;
+    },
+
+
     processSlice: function(slice) {
         var frame        = [slice frame],
             sliceName    = [slice name],
@@ -137,7 +160,7 @@ com.geertwille.main = {
             var name         = this.factors[i].folder,
             scale            = this.factors[i].scale,
             suffix           = this.factors[i].suffix,
-            version          = this.copyLayerWithFactor(slice, scale),
+            version          = this.copyLayerWithFactor(slice, scale, this.densityScale),
             relativeFileName = fileName + suffix + imageExtension,
             absoluteFileName = this.baseDir + "/" + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/" + fileName + suffix + imageExtension;
 
@@ -157,11 +180,11 @@ com.geertwille.main = {
         }
     },
 
-    copyLayerWithFactor: function(originalSlice, factor) {
+    copyLayerWithFactor: function(originalSlice, factor, densityScale) {
         var copy     = [originalSlice duplicate],
             frame    = [copy frame],
-            rect     = [[copy absoluteRect] rect];
-            slice    = [MSExportRequest requestWithRect:rect scale:factor];
+            rect     = [[copy absoluteRect] rect],
+            slice    = [MSExportRequest requestWithRect:rect scale:(factor / densityScale)];
 
         [copy removeFromParent];
 
