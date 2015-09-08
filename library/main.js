@@ -176,9 +176,12 @@ com.geertwille.main = {
         // Hide all layers except for selected and store visibility
         for (var k = 0; k < [[root layers] count]; k++) {
             var currentLayer = [[root layers] objectAtIndex:k];
+            if (target.className() == "MSSliceLayer" && currentLayer == [target parentGroup]) {
+                continue;
+            }
             if ([currentLayer containsSelectedItem] && currentLayer != target) {
                 this.hideLayers(currentLayer, target);
-            } else if (!(currentLayer == target)) {
+            } else if (currentLayer != target) {
                 var dict = [[NSMutableDictionary alloc] init];
                 [dict addObject:currentLayer forKey:"layer"];
                 [dict addObject:[currentLayer isVisible] forKey:"visible"];
