@@ -41,6 +41,9 @@ The plugin assumes you design your layouts in mdpi, which means 1px = 1dp
 
 * Export: cmd + &
 
+## Adding Padding to slices
+From now on you can manually decide how big you want your exported asset to be. Just include a slicelayer in the group of that asset and it will not use the size of the group but the size of that slicelayer...
+
 ## Credits
 This plugin is based on my other project [sketch-export-assets]. Now it's even more easier for our designers to deliver the assets to our iOS developers.
 
