@@ -1,17 +1,20 @@
-#import 'library/general.js'
-#import 'library/messages.js'
-#import 'library/sandbox.js'
+@import 'library/general.js'
+@import 'library/functions.js'
+@import 'library/messages.js'
+@import 'library/sandbox.js'
 
 com.geertwille.main = {
     defaultAssetFolder: 'Images.xcassets',
     type: '',
+    baseDensity: 0,
     baseDir: '',
     factors: {},
     layerVisibility: [],
 
-    export: function(type, factors) {
+    export: function(type, factors, baseDensity) {
         this.type = type;
         this.factors = factors;
+        this.baseDensity = baseDensity;
         this.baseDir = this.getDirFromPrompt();
 
         if (this.baseDir == null) {
@@ -23,6 +26,10 @@ com.geertwille.main = {
         if ([selection count] == 0) {
             com.geertwille.general.alert("No layer(s) selected");
             return;
+        }
+
+        if (this.baseDensity == 0) {
+            this.baseDensity = this.getDensityScaleFromPrompt();
         }
 
         // Hide all layers except the ones we are slicing
@@ -68,6 +75,28 @@ com.geertwille.main = {
             var message = [panel filename];
             return message;
         }
+    },
+
+    //Let the user select design density
+    getDensityScaleFromPrompt: function() {
+        var folders       = helpers.readPluginPath(),
+            accessory     = [[NSComboBox alloc] initWithFrame:NSMakeRect(0, 0, 200, 25)],
+            alert         = [[NSAlert alloc] init],
+            responseCode
+        ;
+        [accessory addItemsWithObjectValues:['@1x', '@2x', '@3x']];
+        [accessory selectItemAtIndex: 0];
+
+        [alert setMessageText:'Select screen density'];
+        [alert addButtonWithTitle:'OK'];
+        [alert setAccessoryView:accessory];
+
+        responseCode = [alert runModal];
+        var densityScale = [accessory indexOfSelectedItem] + 1;
+
+        helpers.saveJsonToFile([NSDictionary dictionaryWithObjectsAndKeys:densityScale, @"density-scale", nil], folders.sketchPluginsPath + folders.pluginFolder + '/config.json');
+
+        return densityScale;
     },
 
     processSlice: function(slice) {
@@ -121,7 +150,7 @@ com.geertwille.main = {
         }
 
         // write the json string to a file
-        var ok = this.writeTextToFile(this.prepareJSON(lineBuffer), this.baseDir + "/" + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/Contents.json");
+        var ok = helpers.writeTextToFile(this.prepareJSON(lineBuffer), this.baseDir + "/" + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/Contents.json");
 
         if (ok === false) {
             com.geertwille.general.alert(com.geertwille.messages.unknown_error);
@@ -144,32 +173,12 @@ com.geertwille.main = {
             }
         }
 
-        slice = [MSExportRequest requestWithRect:rect scale:factor];
+        slice = [MSExportRequest requestWithRect:rect scale:(factor / this.baseDensity)];
         slice.shouldTrim = true;
         // slice.saveForWeb = true;
         // slice.compression = 0;
         slice.includeArtboardBackground = false;
         return slice;
-    },
-
-    writeTextToFile: function(text, path) {
-        var result = false;
-        if (typeof path !== 'string')
-            return result;
-
-        // create a NSString object from the given text
-        var nsstring = NSString.stringWithUTF8String(text);
-
-        // use the writeToFile method of the NSString object to write the text to the given URL
-        result = [nsstring writeToFile:path atomically:1 encoding:NSUTF8StringEncoding error:null];
-
-        if (!result) {
-            result = false;
-        } else {
-            result = true;
-        }
-
-        return result;
     },
 
     prepareJSON: function(lineBuffer) {
@@ -183,5 +192,16 @@ com.geertwille.main = {
         jsoncode = jsoncode + ' ], "info" : { "version" : 1, "author" : "xcode" }}';
 
         return jsoncode;
+    },
+
+    readConfig: function() {
+        var folders = helpers.readPluginPath();
+        log(folders.sketchPluginsPath + folders.pluginFolder);
+        return helpers.jsonFromFile(folders.sketchPluginsPath + folders.pluginFolder + '/config.json', true);
+        // helpers.jsonFromFile();
+    },
+
+    updateBaseDensity: function() {
+        this.getDensityScaleFromPrompt();
     }
 }
