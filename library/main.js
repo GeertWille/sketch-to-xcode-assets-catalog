@@ -31,35 +31,9 @@ com.geertwille.main = {
             // Make sure we don't get errors if no artboard exists.
             // currentPage inerits from MSLayerGroup so it's basicly the same as an artboard
             var artboard = [layer parentArtboard] ? [layer parentArtboard] : [doc currentPage];
-            this.layerVisibility = [];
-
-            [artboard deselectAllLayers];
-
-            var layerArray = [layer];
-            [artboard selectLayers:layerArray];
-
-            var root = artboard;
-
-            this.hideLayers(root, layer);
 
             // Process the slice
             success = this.processSlice(layer);
-
-            // Restore layers visibility
-            for (var m = 0; m < this.layerVisibility.length; m++) {
-                var dict = this.layerVisibility[m];
-                var layer = [dict objectForKey:"layer"];
-                var visibility = [dict objectForKey:"visible"];
-
-                if (visibility == 0) {
-                    [layer setIsVisible:false];
-                } else {
-                    [layer setIsVisible:true];
-                }
-            }
-
-            // Restore selection
-            [artboard selectLayers:selection];
 
             if (success === false)
                 return;
@@ -137,7 +111,7 @@ com.geertwille.main = {
             var name         = this.factors[i].folder,
             scale            = this.factors[i].scale,
             suffix           = this.factors[i].suffix,
-            version          = this.copyLayerWithFactor(slice, scale),
+            version          = this.makeSliceAndResizeWithFactor(slice, scale),
             relativeFileName = fileName + suffix + imageExtension,
             absoluteFileName = this.baseDir + "/" + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/" + fileName + suffix + imageExtension;
 
@@ -157,36 +131,25 @@ com.geertwille.main = {
         }
     },
 
-    copyLayerWithFactor: function(originalSlice, factor) {
-        var copy     = [originalSlice duplicate],
-            frame    = [copy frame],
-            rect     = [[copy absoluteRect] rect];
-            slice    = [MSExportRequest requestWithRect:rect scale:factor];
+    makeSliceAndResizeWithFactor: function(layer, factor) {
+        var loopLayerChildren = [[layer children] objectEnumerator],
+            rect = [MSSliceTrimming trimmedRectForSlice:layer],
+            slice
+        ;
 
-        [copy removeFromParent];
-
-        return slice;
-    },
-
-    // I used this code from https://github.com/nickstamas/Sketch-Better-Android-Export
-    // and has been written by Nick Stamas
-    // Cheers to him :)
-    // Addapted it a bit for my plugin
-    hideLayers: function(root, target) {
-        // Hide all layers except for selected and store visibility
-        for (var k = 0; k < [[root layers] count]; k++) {
-            var currentLayer = [[root layers] objectAtIndex:k];
-            if ([currentLayer containsSelectedItem] && currentLayer != target) {
-                this.hideLayers(currentLayer, target);
-            } else if (!(currentLayer == target)) {
-                var dict = [[NSMutableDictionary alloc] init];
-                [dict addObject:currentLayer forKey:"layer"];
-                [dict addObject:[currentLayer isVisible] forKey:"visible"];
-
-                this.layerVisibility.push(dict);
-                [currentLayer setIsVisible: false];
+        // Check for MSSliceLayer and overwrite the rect if present
+        while (layerChild = [loopLayerChildren nextObject]) {
+            if ([layerChild class] == 'MSSliceLayer') {
+                rect  = [MSSliceTrimming trimmedRectForSlice:layerChild];
             }
         }
+
+        slice = [MSExportRequest requestWithRect:rect scale:factor];
+        slice.shouldTrim = true;
+        // slice.saveForWeb = true;
+        // slice.compression = 0;
+        slice.includeArtboardBackground = false;
+        return slice;
     },
 
     writeTextToFile: function(text, path) {
