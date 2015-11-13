@@ -24,10 +24,11 @@ directory, you'll find the plugin functions under the Plugins menu in Sketch.
 ## Layer naming convention
 
 * `extension_device_filename`
-  * Extension: Can be "j" (jpg) or "p" (png)
-  * Device: Can be "u" (universal), "m" (mobile) or "t" (tablet)
+  * Extension: Can be "j" (jpg), "p" (png), or "v" (PDF vector).
+  * Device: Can be "u" (universal), "m" (mobile) or "t" (tablet).
 
 ### Valid examples
+* `v_u_pepe-button`
 * `p_u_green-button`
 * `j_t_green_button`
 * `p_m_greenbutton`
@@ -51,3 +52,5 @@ This plugin is based on my other project [sketch-export-assets]. Now it's even m
 
 
 [sketch-export-assets]:https://github.com/geertwille/sketch-export-assets
+
+PDF vector export support by [markiv](https://github.com/markiv).
