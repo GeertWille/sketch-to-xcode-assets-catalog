@@ -116,6 +116,10 @@ com.geertwille.main = {
             imageExtension = ".jpg";
         } else if (fileType == "p_") {
             imageExtension = ".png";
+        } else if (fileType == "v_") {
+            // Vector (PDF) export, needs no scaling
+            imageExtension = ".pdf";
+            this.factors = [this.factors[0]];
         } else {
             // no valid naming convention used
             com.geertwille.general.alert(sliceName + com.geertwille.messages.invalid_layer_name);
@@ -145,8 +149,11 @@ com.geertwille.main = {
             absoluteFileName = this.baseDir + "/" + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/" + fileName + suffix + imageExtension;
 
             [doc saveArtboardOrSlice:version toFile:absoluteFileName];
-
-            lineBuffer.push([relativeFileName, scale, idiom]);
+            if (fileType == "v_") {
+                lineBuffer.push([relativeFileName, 0, idiom]); // Vector's JSON has no scale
+            } else {
+                lineBuffer.push([relativeFileName, scale, idiom]);
+            }
         }
 
         // write the json string to a file
@@ -186,7 +193,12 @@ com.geertwille.main = {
 
         for (var c = 0; c < lineBuffer.length; c++) {
             log("LINE : " + lineBuffer[c]);
-            jsoncode = jsoncode + '{"idiom" : "' + lineBuffer[c][2] + '", "scale" : "' + lineBuffer[c][1] + 'x", "filename" : "' + lineBuffer[c][0] + '"},';
+            var scale = lineBuffer[c][1];
+            jsoncode += '{"idiom" : "' + lineBuffer[c][2] + '", ';
+            if (scale) {
+                jsoncode += '"scale" : "' + scale + 'x", ';
+            }
+            jsoncode += '"filename" : "' + lineBuffer[c][0] + '"},';
         }
 
         jsoncode = jsoncode + ' ], "info" : { "version" : 1, "author" : "xcode" }}';
