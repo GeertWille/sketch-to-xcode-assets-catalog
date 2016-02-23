@@ -2,6 +2,9 @@
 
 Export assets for iOS directly from Sketch into Xcodes assets catalog
 
+##### Please donate any value to keep this project alive
+<a href='https://pledgie.com/campaigns/31173'><img alt='Click here to lend your support to: Sketch plugin research and development funding and make a donation at pledgie.com !' src='https://pledgie.com/campaigns/31173.png?skin_name=chrome' border='0' ></a>
+
 ## Installation
 
 The basic procedure is the same regardless of which version of Sketch
