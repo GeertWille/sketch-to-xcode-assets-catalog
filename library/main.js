@@ -46,6 +46,10 @@ com.geertwille.main = {
                 return;
         }
 
+        // write the content.json in the default asset folder
+        var jsoncode = '{ "info" : { "version" : 1, "author" : "xcode" } }';
+        helpers.writeTextToFile(jsoncode, this.baseDir + "/" + this.defaultAssetFolder + "/Contents.json");
+
         // Open finder window with assets exported
         com.geertwille.general.openInFinder(this.baseDir + "/" + this.defaultAssetFolder);
     },
