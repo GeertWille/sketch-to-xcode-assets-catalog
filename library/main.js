@@ -160,8 +160,8 @@ com.geertwille.main = {
 
         // write the json string to a file depending on if name already exists
         if (cutSliceName in this.namesAndJson) {
-          var text = this.combineJSON(cutSliceName, lineBuffer);
-          ok = helpers.writeTextToFile(text, this.baseDir + "/" + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/Contents.json");
+          var combinedJSONs = this.combineJSON(cutSliceName, lineBuffer);
+          ok = helpers.writeTextToFile(combinedJSONs, this.baseDir + "/" + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/Contents.json");
         } else {
           var ok = helpers.writeTextToFile(this.prepareJSON(this.prepareInnerJSON(lineBuffer)), this.baseDir + "/" + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/Contents.json");
           this.namesAndJson[cutSliceName] = this.prepareInnerJSON(lineBuffer);
@@ -219,6 +219,9 @@ com.geertwille.main = {
 
     //prepare the whole JSON whith variable amount of innerJSONs
     prepareJSON: function(innerJSONs) {
+
+        //delete last "," of innerJSONs for valid JSON format
+        innerJSONs = innerJSONs.slice(0, -1);
         return '{ "images" : [' + innerJSONs + ' ], "info" : { "version" : 1, "author" : "xcode" }}';
     },
 
