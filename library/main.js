@@ -10,6 +10,7 @@ com.geertwille.main = {
     baseDir: '',
     factors: {},
     layerVisibility: [],
+    namesAndJson: {},
 
     export: function(type, factors, baseDensity) {
         this.type = type;
@@ -150,7 +151,8 @@ com.geertwille.main = {
             suffix           = this.factors[i].suffix,
             version          = this.makeSliceAndResizeWithFactor(slice, scale),
             relativeFileName = fileName + suffix + imageExtension,
-            absoluteFileName = this.baseDir + "/" + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/" + fileName + suffix + imageExtension;
+            absoluteFileName = this.baseDir + "/" + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/" + idiom + "_" + fileName + suffix + imageExtension;
+
 
             [doc saveArtboardOrSlice:version toFile:absoluteFileName];
             if (fileType == "v_") {
@@ -160,8 +162,14 @@ com.geertwille.main = {
             }
         }
 
-        // write the json string to a file
-        var ok = helpers.writeTextToFile(this.prepareJSON(lineBuffer), this.baseDir + "/" + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/Contents.json");
+        // write the json string to a file depending on if name already exists
+        if (cutSliceName in this.namesAndJson) {
+          var combinedJSONs = this.combineJSON(cutSliceName, lineBuffer);
+          ok = helpers.writeTextToFile(combinedJSONs, this.baseDir + "/" + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/Contents.json");
+        } else {
+          var ok = helpers.writeTextToFile(this.prepareJSON(this.prepareInnerJSON(lineBuffer)), this.baseDir + "/" + this.defaultAssetFolder + "/" + cutSliceName + ".imageset/Contents.json");
+          this.namesAndJson[cutSliceName] = this.prepareInnerJSON(lineBuffer);
+        }
 
         if (ok === false) {
             com.geertwille.general.alert(com.geertwille.messages.unknown_error);
@@ -197,22 +205,36 @@ com.geertwille.main = {
         return slice;
     },
 
-    prepareJSON: function(lineBuffer) {
-        var jsoncode = '{ "images" : [';
+    //prepare just the inner JSON from lineBuffer
+    prepareInnerJSON: function(lineBuffer) {
+      var text = "";
 
-        for (var c = 0; c < lineBuffer.length; c++) {
-            log("LINE : " + lineBuffer[c]);
-            var scale = lineBuffer[c][1];
-            jsoncode += '{"idiom" : "' + lineBuffer[c][2] + '", ';
-            if (scale) {
-                jsoncode += '"scale" : "' + scale + 'x", ';
-            }
-            jsoncode += '"filename" : "' + lineBuffer[c][0] + '"},';
-        }
+      for (var c = 0; c < lineBuffer.length; c++) {
+          log("LINE : " + lineBuffer[c]);
+          var scale = lineBuffer[c][1];
+          text += '{"idiom" : "' + lineBuffer[c][2] + '", ';
+          if (scale) {
+              text += '"scale" : "' + scale + 'x", ';
+          }
+          text += '"filename" : "' + lineBuffer[c][2] + '_' + lineBuffer[c][0] + '"},';
+      }
+      return text;
+    },
 
-        jsoncode = jsoncode + ' ], "info" : { "version" : 1, "author" : "xcode" }}';
+    //prepare the whole JSON whith variable amount of innerJSONs
+    prepareJSON: function(innerJSONs) {
 
-        return jsoncode;
+        //delete last "," of innerJSONs for valid JSON format
+        innerJSONs = innerJSONs.slice(0, -1);
+        return '{ "images" : [' + innerJSONs + ' ], "info" : { "version" : 1, "author" : "xcode" }}';
+    },
+
+    //combine the already existing innerJSON with the same name and the actual innerJSON to a whole new innerJSON
+    combineJSON: function(cutSliceName, lineBuffer) {
+
+      var oldInnerJSON = this.namesAndJson[cutSliceName];
+
+      return this.prepareJSON(this.prepareInnerJSON(lineBuffer) + oldInnerJSON);
     },
 
     readConfig: function() {
